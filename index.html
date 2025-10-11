@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Age Calculator</title>
+  <style>
+    :root{--bg:#f5f6fa;--text:#222;--accent:#0078d7;--muted:#555;--card:#fff;--border:#e0e0e0}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .container{width:100%;max-width:820px;background:var(--card);border-radius:16px;padding:30px;box-shadow:0 6px 25px rgba(0,0,0,0.1);border:1px solid var(--border);display:flex;flex-direction:row;align-items:center;gap:32px}
+    .left{flex:1}
+    .right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    h1{margin:0 0 8px;font-size:26px;color:var(--accent)}
+    p.lead{margin:0 0 20px;color:var(--muted)}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    select,input[type=number]{padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:inherit;width:100%}
+    .row{display:flex;gap:10px;margin-bottom:14px}
+    .controls{display:flex;gap:10px;margin-top:10px}
+    button{cursor:pointer;padding:10px 16px;border-radius:8px;border:none;font-weight:600;transition:0.2s}
+    button.calculate{background:var(--accent);color:#fff}
+    button.calculate:hover{opacity:0.9}
+    button.clear{background:transparent;border:1px solid var(--border);color:var(--muted)}
+    button.clear:hover{background:#f1f1f1}
+    .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px;width:100%}
+    .tile{background:var(--bg);padding:16px;border-radius:10px;text-align:center;border:1px solid var(--border)}
+    .value{font-size:22px;font-weight:700;color:var(--accent)}
+    .label{font-size:13px;color:var(--muted);margin-top:6px}
+    footer{margin-top:20px;padding-top:12px;border-top:1px dashed var(--border);text-align:right}
+    a.footer-link{color:var(--accent);text-decoration:none;font-weight:500;font-size:12px}
+    @media(max-width:700px){.container{flex-direction:column;align-items:flex-start}.right{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <div class="left">
+      <h1>Age Calculator</h1>
+      <p class="lead">Enter your date of birth to calculate your age.</p>
+
+      <div class="row">
+        <div style="flex:1">
+          <label for="day">Day</label>
+          <select id="day"></select>
+        </div>
+        <div style="flex:1">
+          <label for="month">Month</label>
+          <select id="month"></select>
+        </div>
+        <div style="flex:1">
+          <label for="year">Year</label>
+          <input id="year" type="number" placeholder="e.g. 2000" />
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="calculateBtn" class="calculate">Calculate</button>
+        <button id="clearBtn" class="clear">Clear</button>
+      </div>
+
+      <div id="error" style="display:none;margin-top:12px;color:#b91c1c;background:#fee2e2;padding:10px;border-radius:8px"></div>
+      
+    </div>
+
+    <div class="right">
+      <div id="output" style="display:none;width:100%">
+        <div class="result-grid">
+          <div class="tile"><div class="value" id="years">0</div><div class="label">Years</div></div>
+          <div class="tile"><div class="value" id="months">0</div><div class="label">Months</div></div>
+          <div class="tile"><div class="value" id="days">0</div><div class="label">Days</div></div>
+          <div class="tile"><div class="value" id="totalDays">0</div><div class="label">Total Days</div></div>
+        </div>
+      </div>
+      <footer>
+      <a class="footer-link" href="https://www.facebook.com/share/1BEfm8XqoR/" target="_blank">Developed by Rubel Mahmud</a>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const daySelect = document.getElementById('day');
+    const monthSelect = document.getElementById('month');
+    const yearInput = document.getElementById('year');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const output = document.getElementById('output');
+    const yearsEl = document.getElementById('years');
+    const monthsEl = document.getElementById('months');
+    const daysEl = document.getElementById('days');
+    const totalDaysEl = document.getElementById('totalDays');
+    const errorBox = document.getElementById('error');
+
+    // Populate day and month options
+    for(let i=1;i<=31;i++){ daySelect.innerHTML += `<option value="${i}">${i}</option>`; }
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    months.forEach((m,i)=>{ monthSelect.innerHTML += `<option value="${i+1}">${m}</option>`; });
+
+    function showError(msg){
+      errorBox.style.display='block';
+      errorBox.textContent = msg;
+      output.style.display='none';
+    }
+
+    function clearError(){
+      errorBox.style.display='none';
+      errorBox.textContent='';
+    }
+
+    function diffDates(d1, d2){
+      let start = new Date(d1.getTime());
+      let end = new Date(d2.getTime());
+      if (end < start) { return null; }
+
+      let years = end.getFullYear() - start.getFullYear();
+      let months = end.getMonth() - start.getMonth();
+      let days = end.getDate() - start.getDate();
+
+      if (days < 0){
+        const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+        days += prevMonth.getDate();
+        months -= 1;
+      }
+      if (months < 0){
+        months += 12;
+        years -= 1;
+      }
+      return {years, months, days};
+    }
+
+    function calculate(){
+      clearError();
+      const day = parseInt(daySelect.value);
+      const month = parseInt(monthSelect.value);
+      const year = parseInt(yearInput.value);
+      if (!year || !day || !month){ showError('Please select day, month and enter year.'); return; }
+
+      const dob = new Date(year, month-1, day);
+      const today = new Date();
+
+      if (dob.toString() === 'Invalid Date') { showError('Invalid date.'); return; }
+      if (dob > today){ showError('Date of birth cannot be in the future.'); return; }
+
+      const diff = diffDates(dob, today);
+      if (!diff){ showError('Something went wrong.'); return; }
+
+      yearsEl.textContent = diff.years;
+      monthsEl.textContent = diff.months;
+      daysEl.textContent = diff.days;
+
+      const msPerDay = 24*60*60*1000;
+      const totalDays = Math.floor((today - dob)/msPerDay);
+      totalDaysEl.textContent = totalDays;
+
+      output.style.display = 'block';
+    }
+
+    calculateBtn.addEventListener('click', calculate);
+    clearBtn.addEventListener('click', ()=>{
+      daySelect.selectedIndex = 0;
+      monthSelect.selectedIndex = 0;
+      yearInput.value = '';
+      output.style.display = 'none';
+      clearError();
+    });
+
+    yearInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') calculate(); });
+  </script>
+</body>
+</html>
